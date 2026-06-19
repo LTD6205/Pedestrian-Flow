@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedestrian Flow Simulation - Interactive Demo</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --accent-blue: #0284c7;
+            --accent-green: #16a34a;
+            --accent-red: #dc2626;
+            --border-color: #cbd5e1;
+        }
+ 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+ 
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+ 
+        header h1 {
+            margin: 0;
+            font-size: 2rem;
+            color: var(--accent-blue);
+            font-weight: 700;
+        }
+ 
+        header p {
+            margin: 5px 0 0;
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+ 
+        .container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+ 
+        .panel {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+ 
+        .visualization {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+ 
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+ 
+        .card h3 {
+            margin: 0 0 15px;
+            align-self: flex-start;
+            color: var(--accent-blue);
+            font-size: 1.1rem;
+        }
+ 
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+ 
+        .control-group label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+        }
+ 
+        .control-group label span {
+            color: var(--accent-blue);
+            font-weight: bold;
+        }
+ 
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e2e8f0;
+            outline: none;
+        }
+ 
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            transition: background 0.15s ease-in-out;
+        }
+ 
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: var(--accent-green);
+        }
+ 
+        .toggle-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+ 
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 22px;
+        }
+ 
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+ 
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #e2e8f0;
+            transition: .4s;
+            border-radius: 22px;
+        }
+ 
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+ 
+        input:checked + .slider {
+            background-color: var(--accent-green);
+        }
+ 
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+ 
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+ 
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #ffffff;
+        }
+ 
+        .btn-primary {
+            background-color: var(--accent-blue);
+        }
+ 
+        .btn-primary:hover {
+            background-color: #0284c7;
+        }
+ 
+        .btn-secondary {
+            background-color: #64748b;
+            color: white;
+        }
+ 
+        .btn-secondary:hover {
+            background-color: #475569;
+        }
+ 
+        .btn-danger {
+            background-color: var(--accent-red);
+        }
+ 
+        .btn-danger:hover {
+            background-color: #b91c1c;
+        }
+ 
+        canvas {
+            background-color: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+ 
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+            margin-top: 15px;
+        }
+ 
+        .stat-card {
+            background-color: #f1f5f9;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+ 
+        .stat-card div:first-child {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+ 
+        .stat-card div:last-child {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--accent-green);
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Mô phỏng Dòng Người đi bộ Tương tác (1D Corridor)</h1>
+        <p>Điều chỉnh các thông số và quan sát trực tiếp sự hình thành của sóng mật độ (Density Wave)</p>
+    </header>
+ 
+    <div class="container">
+        <!-- Bảng điều khiển -->
+        <div class="panel">
+            <div class="toggle-group">
+                <span>Lực tương tác từ xa (Remote Action)</span>
+                <label class="switch">
+                    <input type="checkbox" id="useRemote" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+ 
+            <div class="control-group">
+                <label>Số người đi bộ (N): <span id="valN">21</span></label>
+                <input type="range" id="paramN" min="2" max="35" value="21">
+            </div>
+ 
+            <div class="control-group">
+                <label>Hệ số giãn cách an toàn (b): <span id="valB">0.00</span></label>
+                <input type="range" id="paramB" min="0.0" max="1.5" step="0.05" value="0.00">
+            </div>
+ 
+            <div class="control-group">
+                <label>Tốc độ mong muốn trung bình (v0): <span id="valV0">1.24</span> m/s</label>
+                <input type="range" id="paramV0" min="0.5" max="2.0" step="0.05" value="1.24">
+            </div>
+ 
+            <div class="control-group">
+                <label>Thời gian thư giãn (&tau;): <span id="valTau">0.61</span> s</label>
+                <input type="range" id="paramTau" min="0.1" max="2.0" step="0.05" value="0.61">
+            </div>
+ 
+            <div class="control-group">
+                <label>Độ mạnh lực đẩy từ xa (e): <span id="valE">0.07</span></label>
+                <input type="range" id="paramE" min="0.01" max="0.30" step="0.01" value="0.07">
+            </div>
+ 
+            <div class="btn-group">
+                <button class="btn-primary" id="btnPlay">Tạm dừng</button>
+                <button class="btn-secondary" id="btnStep">Bước tiếp</button>
+            </div>
+            <button class="btn-danger" id="btnReset">Khởi động lại</button>
+ 
+            <div class="stats">
+                <div class="stat-card">
+                    <div>Mật độ (&rho;)</div>
+                    <div id="statDensity">1.21 /m</div>
+                </div>
+                <div class="stat-card">
+                    <div>Vận tốc TB (v)</div>
+                    <div id="statSpeed">0.00 m/s</div>
+                </div>
+            </div>
+        </div>
+ 
+        <!-- Các khung hình trực quan hóa -->
+        <div class="visualization">
+            <!-- 1. Hoạt ảnh hành lang vòng tròn -->
+            <div class="card">
+                <h3>Trực quan hóa Hành lang Tuần hoàn (Chiều dài L = 17.3m)</h3>
+                <canvas id="canvasCorridor" width="750" height="150"></canvas>
+            </div>
+ 
+            <!-- 2. Đồ thị Spatio-Temporal -->
+            <div class="card">
+                <h3>Đồ thị Không gian - Thời gian (Spatio-Temporal Plot - x vs t)</h3>
+                <canvas id="canvasPlot" width="750" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+ 
+    <script>
+        // Các biến mô phỏng chính
+        const L = 17.3;
+        let N = 21;
+        let dt = 0.005; // Tăng dt một chút cho web mượt mà
+        let tau = 0.61;
+        let a = 0.36;
+        let b = 0.0;
+        let e = 0.07;
+        let f = 2.0;
+        let useRemote = true;
+ 
+        let x = [];
+        let v = [];
+        let v0 = [];
+        let isPlaying = true;
+        let stepCount = 0;
+        
+        // Mảng lưu lịch sử vị trí cho biểu đồ spatio-temporal (tối đa 200 dòng)
+        let plotHistory = [];
+        const maxHistory = 150;
+ 
+        // Kết nối các phần tử HTML
+        const canvasCorridor = document.getElementById('canvasCorridor');
+        const ctxCorridor = canvasCorridor.getContext('2d');
+        const canvasPlot = document.getElementById('canvasPlot');
+        const ctxPlot = canvasPlot.getContext('2d');
+ 
+        // Lấy điều khiển
+        const paramN = document.getElementById('paramN');
+        const paramB = document.getElementById('paramB');
+        const paramV0 = document.getElementById('paramV0');
+        const paramTau = document.getElementById('paramTau');
+        const paramE = document.getElementById('paramE');
+        const useRemoteToggle = document.getElementById('useRemote');
+ 
+        const btnPlay = document.getElementById('btnPlay');
+        const btnStep = document.getElementById('btnStep');
+        const btnReset = document.getElementById('btnReset');
+ 
+        // Hàm khởi tạo trạng thái mô phỏng
+        function initSimulation() {
+            N = parseInt(paramN.value);
+            b = parseFloat(paramB.value);
+            tau = parseFloat(paramTau.value);
+            e = parseFloat(paramE.value);
+            useRemote = useRemoteToggle.checked;
+            
+            x = [];
+            v = [];
+            v0 = [];
+            plotHistory = [];
+            stepCount = 0;
+ 
+            const baseV0 = parseFloat(paramV0.value);
+            
+            // Xếp hàng ban đầu cách đều nhau a=0.36m
+            for (let i = 0; i < N; i++) {
+                x.push(i * a);
+                v.push(0.0);
+                // Vận tốc mong muốn phân phối chuẩn nhẹ quanh baseV0
+                v0.push(baseV0 + (Math.random() - 0.5) * 0.1);
+            }
+            updateLabels();
+        }
+ 
+        // Cập nhật nhãn thông số
+        function updateLabels() {
+            document.getElementById('valN').innerText = paramN.value;
+            document.getElementById('valB').innerText = parseFloat(paramB.value).toFixed(2);
+            document.getElementById('valV0').innerText = parseFloat(paramV0.value).toFixed(2);
+            document.getElementById('valTau').innerText = parseFloat(paramTau.value).toFixed(2);
+            document.getElementById('valE').innerText = parseFloat(paramE.value).toFixed(2);
+ 
+            const density = N / L;
+            document.getElementById('statDensity').innerText = density.toFixed(2) + " /m";
+        }
+ 
+        // Các hàm tính toán vật lý
+        function getDistance(i, positions) {
+            return (positions[(i + 1) % N] - positions[i] + L) % L;
+        }
+ 
+        function computeForce(i, positions, velocities) {
+            const d = a + b * velocities[i];
+            const s = getDistance(i, positions);
+ 
+            if (!useRemote) {
+                if (s > d) {
+                    return (v0[i] - velocities[i]) / tau;
+                } else {
+                    return -velocities[i] / dt;
+                }
+            } else {
+                const repulsion = (s - d) > 1e-4 ? e / Math.pow(s - d, f) : 1e5;
+                const G = (v0[i] - velocities[i]) / tau - repulsion;
+                return velocities[i] > 0 ? G : Math.max(0, G);
+            }
+        }
+ 
+        // Một bước mô phỏng tính toán
+        function stepSimulation() {
+            const forces = [];
+            for (let i = 0; i < N; i++) {
+                forces.push(computeForce(i, x, v));
+            }
+ 
+            const v_new = [];
+            const x_new = [];
+ 
+            // Cập nhật Euler tạm thời
+            for (let i = 0; i < N; i++) {
+                let vTemp = v[i] + dt * forces[i];
+                vTemp = Math.min(Math.max(0, vTemp), v0[i]); // Clip
+                v_new.push(vTemp);
+                x_new.push((x[i] + vTemp * dt) % L);
+            }
+ 
+            // Xử lý va chạm vật thể cứng
+            for (let i = N - 1; i > 0; i--) {
+                const d_i = a + b * v_new[i];
+                const s = (x_new[i - 1] - x_new[i] + L) % L;
+                if (s < d_i) {
+                    v_new[i] = 0.0;
+                    x_new[i] = x[i];
+                }
+            }
+ 
+            v = v_new;
+            x = x_new;
+ 
+            // Tính vận tốc trung bình hiện tại
+            let sumV = 0;
+            for (let i = 0; i < N; i++) sumV += v[i];
+            const avgV = sumV / N;
+            document.getElementById('statSpeed').innerText = avgV.toFixed(2) + " m/s";
+ 
+            // Lưu vào lịch sử để vẽ Spatio-temporal plot (lấy mẫu mỗi 20 bước cho mượt)
+            if (stepCount % 20 === 0) {
+                plotHistory.push([...x]);
+                if (plotHistory.length > maxHistory) {
+                    plotHistory.shift();
+                }
+            }
+            stepCount++;
+        }
+ 
+        // Vẽ hành lang trực quan 2D
+        function drawCorridor() {
+            ctxCorridor.clearRect(0, 0, canvasCorridor.width, canvasCorridor.height);
+            
+            // Vẽ đường hành lang ngang
+            const yCenter = canvasCorridor.height / 2;
+            ctxCorridor.strokeStyle = '#e2e8f0';
+            ctxCorridor.lineWidth = 20;
+            ctxCorridor.beginPath();
+            ctxCorridor.moveTo(50, yCenter);
+            ctxCorridor.lineTo(700, yCenter);
+            ctxCorridor.stroke();
+ 
+            // Vẽ các người đi bộ
+            const startX = 50;
+            const trackWidth = 650;
+ 
+            for (let i = 0; i < N; i++) {
+                const drawX = startX + (x[i] / L) * trackWidth;
+                
+                // Chọn màu sắc: người được đánh dấu (chỉ số N-2) có màu cam rực rỡ để dễ theo dõi
+                const isHighlighted = (i === Math.floor(N / 2));
+                ctxCorridor.fillStyle = isHighlighted ? 'var(--accent-red)' : 'var(--accent-blue)';
+                
+                ctxCorridor.beginPath();
+                ctxCorridor.arc(drawX, yCenter, 8, 0, Math.PI * 2);
+                ctxCorridor.fill();
+ 
+                // Vẽ số thứ tự trên đỉnh đầu
+                ctxCorridor.fillStyle = 'var(--text-primary)';
+                ctxCorridor.font = '9px sans-serif';
+                ctxCorridor.textAlign = 'center';
+                ctxCorridor.fillText(i, drawX, yCenter - 14);
+            }
+        }
+ 
+        // Vẽ biểu đồ Spatio-Temporal
+        function drawPlot() {
+            ctxPlot.clearRect(0, 0, canvasPlot.width, canvasPlot.height);
+ 
+            const padLeft = 50;
+            const padRight = 50;
+            const plotWidth = canvasPlot.width - padLeft - padRight;
+            const plotHeight = canvasPlot.height - 40;
+ 
+            // Vẽ khung tọa độ
+            ctxPlot.strokeStyle = 'var(--border-color)';
+            ctxPlot.lineWidth = 1;
+            ctxPlot.strokeRect(padLeft, 10, plotWidth, plotHeight);
+ 
+            // Nhãn và trục
+            ctxPlot.fillStyle = 'var(--text-secondary)';
+            ctxPlot.font = '12px sans-serif';
+            ctxPlot.textAlign = 'center';
+            ctxPlot.fillText("Vị trí hành lang L [m]", padLeft + plotWidth/2, canvasPlot.height - 8);
+            
+            ctxPlot.textAlign = 'right';
+            ctxPlot.fillText("t (Thời gian)", padLeft - 10, 20);
+ 
+            // Vẽ dữ liệu từ lịch sử
+            const highlightIdx = Math.floor(N / 2);
+            for (let tIdx = 0; tIdx < plotHistory.length; tIdx++) {
+                const stepX = plotHistory[tIdx];
+                const drawY = 10 + (tIdx / maxHistory) * plotHeight;
+ 
+                for (let i = 0; i < N; i++) {
+                    const drawX = padLeft + (stepX[i] / L) * plotWidth;
+                    
+                    const isHighlighted = (i === highlightIdx);
+                    if (isHighlighted) {
+                        ctxPlot.fillStyle = 'var(--accent-red)';
+                        ctxPlot.beginPath();
+                        ctxPlot.arc(drawX, drawY, 2.5, 0, Math.PI * 2);
+                        ctxPlot.fill();
+                    } else {
+                        // Vẽ chấm rỗng cho người khác
+                        ctxPlot.strokeStyle = 'var(--text-secondary)';
+                        ctxPlot.beginPath();
+                        ctxPlot.arc(drawX, drawY, 1.5, 0, Math.PI * 2);
+                        ctxPlot.stroke();
+                    }
+                }
+            }
+        }
+ 
+        // Lặp vòng lặp vẽ khung hình (Animation Loop)
+        function animate() {
+            if (isPlaying) {
+                // Chạy 5 bước tính toán mỗi khung hình cho tốc độ chân thực
+                for (let step = 0; step < 5; step++) {
+                    stepSimulation();
+                }
+            }
+            drawCorridor();
+            drawPlot();
+            requestAnimationFrame(animate);
+        }
+ 
+        // Thiết lập sự kiện tương tác
+        paramN.addEventListener('input', () => { initSimulation(); });
+        paramB.addEventListener('input', () => { b = parseFloat(paramB.value); updateLabels(); });
+        paramV0.addEventListener('input', () => { initSimulation(); });
+        paramTau.addEventListener('input', () => { tau = parseFloat(paramTau.value); updateLabels(); });
+        paramE.addEventListener('input', () => { e = parseFloat(paramE.value); updateLabels(); });
+        useRemoteToggle.addEventListener('change', () => { useRemote = useRemoteToggle.checked; });
+ 
+        btnPlay.addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            btnPlay.innerText = isPlaying ? "Tạm dừng" : "Tiếp tục";
+        });
+ 
+        btnStep.addEventListener('click', () => {
+            if (!isPlaying) {
+                stepSimulation();
+            }
+        });
+ 
+        btnReset.addEventListener('click', () => {
+            initSimulation();
+        });
+ 
+        // Khởi chạy ứng dụng
+        initSimulation();
+        animate();
+    </script>
+</body>
+</html>
+ 
+ 
